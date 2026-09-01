@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Restricted Archive — Harry Potter RAG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0d08;
+    --bg-panel: #11150e;
+    --bg-panel-2: #151a10;
+    --line: #2a3320;
+    --line-soft: #1c2314;
+    --gold: #b8924a;
+    --gold-bright: #d9b76c;
+    --emerald: #35543f;
+    --emerald-bright: #4d7a5a;
+    --parchment: #e9e0c9;
+    --parchment-dim: #a9a288;
+    --muted: #7b8271;
+    --crimson: #8a3a35;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0;
+    padding:0;
+    background: var(--bg);
+    color: var(--parchment);
+    font-family: 'EB Garamond', serif;
+  }
+
+  body{
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(53,84,63,0.18), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(184,146,74,0.08), transparent 55%);
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, .display{
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+
+  /* ---------- Header ---------- */
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 22px 40px;
+    border-bottom: 1px solid var(--line-soft);
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap: 16px;
+  }
+
+  .sigil{
+    width: 46px;
+    height: 46px;
+    flex-shrink:0;
+  }
+
+  .brand-text h1{
+    font-size: 1.5rem;
+    color: var(--parchment);
+  }
+
+  .brand-text p{
+    margin: 2px 0 0;
+    font-size: 0.9rem;
+    color: var(--parchment-dim);
+    font-style: italic;
+  }
+
+  .api-controls{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+
+  .api-controls input{
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    color: var(--parchment-dim);
+    font-family: 'EB Garamond', serif;
+    font-size: 0.92rem;
+    padding: 9px 14px;
+    border-radius: 3px;
+    width: 220px;
+    outline: none;
+  }
+
+  .api-controls input:focus{
+    border-color: var(--gold);
+    color: var(--parchment);
+  }
+
+  .ping-btn{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--parchment);
+    font-family: 'EB Garamond', serif;
+    font-size: 0.92rem;
+    padding: 9px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    gap: 9px;
+    transition: border-color 0.2s ease;
+  }
+
+  .ping-btn:hover{ border-color: var(--gold); }
+
+  .status-dot{
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .status-dot.ok{ background: var(--emerald-bright); box-shadow: 0 0 8px var(--emerald-bright); }
+  .status-dot.bad{ background: var(--crimson); box-shadow: 0 0 8px var(--crimson); }
+
+  /* ---------- Layout ---------- */
+
+  main{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    max-width: 1240px;
+    margin: 44px auto;
+    padding: 0 40px;
+  }
+
+  @media (max-width: 880px){
+    main{ grid-template-columns: 1fr; padding: 0 20px; margin: 28px auto; }
+    header{ padding: 18px 20px; }
+  }
+
+  .panel{
+    background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-2));
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 34px;
+    position: relative;
+  }
+
+  .panel::before{
+    content:"";
+    position:absolute;
+    inset: 6px;
+    border: 1px solid rgba(184,146,74,0.12);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .panel-eyebrow{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom: 6px;
+  }
+
+  .panel-eyebrow span{
+    font-style: italic;
+    color: var(--gold);
+    font-size: 0.92rem;
+  }
+
+  .panel-eyebrow small{
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+
+  .panel h2{
+    font-size: 1.7rem;
+    color: var(--parchment);
+    margin-top: 10px;
+  }
+
+  .panel-desc{
+    color: var(--parchment-dim);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 12px 0 22px;
+    max-width: 46ch;
+  }
+
+  textarea{
+    width: 100%;
+    min-height: 220px;
+    resize: vertical;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--parchment);
+    font-family: 'EB Garamond', serif;
+    font-size: 1.08rem;
+    line-height: 1.6;
+    padding: 18px;
+    outline: none;
+  }
+
+  textarea::placeholder{ color: var(--muted); font-style: italic; }
+  textarea:focus{ border-color: var(--gold); }
+
+  .ask-btn{
+    width: 100%;
+    margin-top: 20px;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+    color: #1a1406;
+    border: none;
+    border-radius: 3px;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 1.02rem;
+    letter-spacing: 0.02em;
+    padding: 15px;
+    cursor: pointer;
+    transition: filter 0.2s ease, transform 0.05s ease;
+  }
+
+  .ask-btn:hover{ filter: brightness(1.08); }
+  .ask-btn:active{ transform: translateY(1px); }
+  .ask-btn:disabled{ filter: grayscale(0.5) brightness(0.7); cursor: default; }
+
+  .examples{
+    margin-top: 22px;
+  }
+
+  .examples > span{
+    display:block;
+    font-size: 0.88rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 10px;
+  }
+
+  .chips{ display:flex; flex-wrap: wrap; gap: 9px; }
+
+  .chip{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--parchment-dim);
+    font-family: 'EB Garamond', serif;
+    font-size: 0.92rem;
+    padding: 7px 13px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .chip:hover{ border-color: var(--emerald-bright); color: var(--parchment); }
+
+  /* ---------- Result panel ---------- */
+
+  .result-body{
+    margin-top: 26px;
+    min-height: 260px;
+    display:flex;
+    flex-direction: column;
+  }
+
+  .empty-state{
+    flex:1;
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    gap: 14px;
+    color: var(--muted);
+  }
+
+  .empty-state h3{
+    color: var(--parchment);
+    font-size: 1.25rem;
+  }
+
+  .empty-state p{
+    max-width: 32ch;
+    font-size: 0.98rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .candle{
+    width: 44px;
+    height: 44px;
+    opacity: 0.85;
+  }
+
+  .flame{
+    transform-origin: 50% 100%;
+    animation: flicker 2.4s ease-in-out infinite;
+  }
+
+  @keyframes flicker{
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    30% { transform: scale(1.05, 0.95) rotate(-2deg); opacity: 0.92; }
+    55% { transform: scale(0.95, 1.05) rotate(2deg); opacity: 1; }
+    80% { transform: scale(1.02, 0.98) rotate(-1deg); opacity: 0.95; }
+  }
+
+  .loading-state{
+    flex:1;
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    justify-content:center;
+    gap: 16px;
+  }
+
+  .sigil-spin{
+    width: 56px;
+    height: 56px;
+    animation: spin 3.2s linear infinite, glow 1.8s ease-in-out infinite;
+  }
+
+  @keyframes spin{ from{ transform: rotate(0deg); } to{ transform: rotate(360deg); } }
+  @keyframes glow{
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(184,146,74,0.3)); }
+    50% { filter: drop-shadow(0 0 9px rgba(184,146,74,0.75)); }
+  }
+
+  .loading-text{
+    font-style: italic;
+    color: var(--gold);
+    font-size: 1.02rem;
+  }
+
+  .answer{
+    animation: reveal 0.5s ease;
+  }
+
+  @keyframes reveal{
+    from{ opacity:0; transform: translateY(6px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  .answer-text{
+    font-size: 1.14rem;
+    line-height: 1.75;
+    color: var(--parchment);
+    white-space: pre-wrap;
+  }
+
+  .answer-text::first-letter{
+    font-family: 'Cinzel', serif;
+    font-size: 2.6rem;
+    float: left;
+    line-height: 0.8;
+    padding: 6px 8px 0 0;
+    color: var(--gold);
+  }
+
+  .sources{
+    margin-top: 28px;
+    border-top: 1px solid var(--line-soft);
+    padding-top: 18px;
+  }
+
+  .sources > span{
+    font-style: italic;
+    color: var(--gold);
+    font-size: 0.9rem;
+    display:block;
+    margin-bottom: 12px;
+  }
+
+  .source-item{
+    border-left: 2px solid var(--emerald);
+    padding: 4px 0 4px 14px;
+    margin-bottom: 12px;
+    color: var(--parchment-dim);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .source-item b{ color: var(--parchment); font-weight: 600; }
+
+  .error-state{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    gap: 10px;
+    color: var(--crimson);
+  }
+
+  .error-state h3{ color: var(--parchment); font-size: 1.2rem; }
+  .error-state p{ color: var(--parchment-dim); max-width: 34ch; font-size: 0.95rem; line-height: 1.5; }
+
+  footer{
+    text-align:center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-style: italic;
+    padding: 20px 0 40px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg class="sigil" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="24" cy="24" r="22" stroke="#b8924a" stroke-width="1.2" opacity="0.5"/>
+      <path d="M24 6 L28 20 L42 24 L28 28 L24 42 L20 28 L6 24 L20 20 Z" stroke="#d9b76c" stroke-width="1.3" fill="rgba(184,146,74,0.08)"/>
+      <circle cx="24" cy="24" r="3" fill="#d9b76c"/>
+    </svg>
+    <div class="brand-text">
+      <h1>The Restricted Archive</h1>
+      <p>Retrieval-augmented answers, drawn from the seven books</p>
+    </div>
+  </div>
+  <div class="api-controls">
+    <input id="apiBase" type="text" value="http://127.0.0.1:8000" spellcheck="false">
+    <button class="ping-btn" id="pingBtn">
+      <span class="status-dot" id="statusDot"></span>
+      Ping API
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT PANEL: ASK -->
+  <section class="panel">
+    <div class="panel-eyebrow">
+      <span>Consult the archive</span>
+      <small>Ctrl + Enter to ask</small>
+    </div>
+    <h2>What would you like to know?</h2>
+    <p class="panel-desc">Ask about a spell, a character, an object, or an event. The archive retrieves the relevant pages before it answers — nothing else informs the reply.</p>
+
+    <textarea id="question" placeholder="Who is the Half-Blood Prince?"></textarea>
+
+    <button class="ask-btn" id="askBtn">Consult the Archive</button>
+
+    <div class="examples">
+      <span>Or try one of these</span>
+      <div class="chips">
+        <button class="chip" data-q="What is a Horcrux?">What is a Horcrux?</button>
+        <button class="chip" data-q="Who is Sirius Black?">Who is Sirius Black?</button>
+        <button class="chip" data-q="What is the Triwizard Tournament?">What is the Triwizard Tournament?</button>
+        <button class="chip" data-q="What does the Marauder's Map do?">What does the Marauder's Map do?</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT PANEL: RESULT -->
+  <section class="panel">
+    <div class="panel-eyebrow">
+      <span>The archive replies</span>
+      <small id="resultStatus">Waiting</small>
+    </div>
+    <h2>Answer</h2>
+
+    <div class="result-body" id="resultBody">
+      <div class="empty-state" id="emptyState">
+        <svg class="candle" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path class="flame" d="M22 6 C26 12 28 16 24 20 C21 22.5 19 20.5 20 17.5 C17 20 16 25 20.5 27.5 C25.5 30 30 25 27 19 C25 15 22 11 22 6 Z" fill="#d9b76c"/>
+          <rect x="19" y="27" width="6" height="12" rx="1" fill="#e9e0c9"/>
+          <rect x="12" y="38" width="20" height="4" rx="1" fill="#7b8271"/>
+        </svg>
+        <h3>The shelves are listening</h3>
+        <p>Ask a question and the archive will retrieve passages before it answers.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Answers are generated from retrieved text — always cross-check against the source pages.</footer>
+
+<script>
+  const apiBaseInput = document.getElementById('apiBase');
+  const pingBtn = document.getElementById('pingBtn');
+  const statusDot = document.getElementById('statusDot');
+  const questionEl = document.getElementById('question');
+  const askBtn = document.getElementById('askBtn');
+  const resultBody = document.getElementById('resultBody');
+  const resultStatus = document.getElementById('resultStatus');
+  const chips = document.querySelectorAll('.chip');
+
+  function getBase(){
+    return apiBaseInput.value.trim().replace(/\/+$/, '');
+  }
+
+  // ---------- Ping ----------
+  pingBtn.addEventListener('click', async () => {
+    statusDot.className = 'status-dot';
+    try {
+      const res = await fetch(getBase() + '/health');
+      if (res.ok) {
+        statusDot.className = 'status-dot ok';
+      } else {
+        statusDot.className = 'status-dot bad';
+      }
+    } catch (e) {
+      statusDot.className = 'status-dot bad';
+    }
+  });
+
+  // ---------- Example chips ----------
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      questionEl.value = chip.dataset.q;
+      questionEl.focus();
+    });
+  });
+
+  // ---------- Ctrl+Enter shortcut ----------
+  questionEl.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      askQuestion();
+    }
+  });
+
+  askBtn.addEventListener('click', askQuestion);
+
+  // ---------- UI state helpers ----------
+  function showLoading(){
+    resultStatus.textContent = 'Searching the stacks';
+    resultBody.innerHTML = `
+      <div class="loading-state">
+        <svg class="sigil-spin" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="22" stroke="#b8924a" stroke-width="1.2" opacity="0.5"/>
+          <path d="M24 6 L28 20 L42 24 L28 28 L24 42 L20 28 L6 24 L20 20 Z" stroke="#d9b76c" stroke-width="1.3" fill="rgba(184,146,74,0.08)"/>
+        </svg>
+        <span class="loading-text">Searching the stacks…</span>
+      </div>`;
+  }
+
+  function showError(message){
+    resultStatus.textContent = 'Error';
+    resultBody.innerHTML = `
+      <div class="error-state">
+        <h3>The archive did not answer</h3>
+        <p>${escapeHtml(message)}</p>
+      </div>`;
+  }
+
+  function showAnswer(answerText, sources){
+    resultStatus.textContent = 'Answered';
+    let sourcesHtml = '';
+    if (sources && sources.length) {
+      sourcesHtml = `
+        <div class="sources">
+          <span>Passages consulted</span>
+          ${sources.map((s, i) => `<div class="source-item"><b>Passage ${i + 1}.</b> ${escapeHtml(s)}</div>`).join('')}
+        </div>`;
+    }
+    resultBody.innerHTML = `
+      <div class="answer">
+        <p class="answer-text">${escapeHtml(answerText)}</p>
+        ${sourcesHtml}
+      </div>`;
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = String(str ?? '');
+    return div.innerHTML;
+  }
+
+  // ---------- Extract fields regardless of backend's exact response shape ----------
+  function extractAnswer(data){
+    if (typeof data === 'string') return data;
+    return data.answer ?? data.response ?? data.result ?? data.message ?? JSON.stringify(data);
+  }
+
+  function extractSources(data){
+    const raw = data.sources ?? data.context ?? data.retrieved_chunks ?? data.chunks ?? data.documents ?? null;
+    if (!raw) return [];
+    return raw.map(item => {
+      if (typeof item === 'string') return item;
+      return item.text ?? item.content ?? item.page_content ?? JSON.stringify(item);
+    });
+  }
+
+  // ---------- Main query call ----------
+  async function askQuestion(){
+    const question = questionEl.value.trim();
+    if (!question) {
+      questionEl.focus();
+      return;
+    }
+
+    askBtn.disabled = true;
+    showLoading();
+
+    const base = getBase();
+    // The payload key is a guess (`question`) matching a typical FastAPI query
+    // schema. If your Pydantic model uses a different field name, adjust
+    // `payloadVariants` below to match it first.
+    const payloadVariants = [
+      { question },
+      { query: question },
+      { text: question }
+    ];
+
+    let lastError = null;
+
+    for (const payload of payloadVariants) {
+      try {
+        const res = await fetch(base + '/query/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.status === 422) {
+          // wrong field name for this variant — try the next one
+          lastError = 'The request did not match the API\'s expected format.';
+          continue;
+        }
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          throw new Error(`API returned ${res.status}${text ? ': ' + text : ''}`);
+        }
+
+        const data = await res.json();
+        const answer = extractAnswer(data);
+        const sources = extractSources(data);
+        showAnswer(answer, sources);
+        askBtn.disabled = false;
+        return;
+
+      } catch (e) {
+        lastError = e.message || String(e);
+      }
+    }
+
+    showError(lastError || 'Could not reach the API. Check the endpoint and that the server is running.');
+    askBtn.disabled = false;
+  }
+</script>
+
+</body>
+</html>

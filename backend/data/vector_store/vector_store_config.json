@@ -1,0 +1,9 @@
+{
+  "embedding_model": "intfloat/multilingual-e5-large",
+  "vector_db": "chromadb",
+  "chroma_path": "chroma_data",
+  "collection_name": "harry_potter_pages",
+  "chunking_strategy": "page-based (one page = one chunk), tagged with book_name + page_number",
+  "num_chunks_indexed": 3574,
+  "top_k_default": 5
+}
